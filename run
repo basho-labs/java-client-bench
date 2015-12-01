@@ -1,0 +1,2 @@
+java -jar ./target/benchmarks.jar -bm thrpt -f 1 -wi 50 -foe true -gc true -i 100 -prof gc
+
