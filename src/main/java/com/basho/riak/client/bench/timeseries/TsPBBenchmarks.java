@@ -15,17 +15,14 @@
  */
 package com.basho.riak.client.bench.timeseries;
 
-import com.basho.riak.client.core.converters.TimeSeriesPBConverter;
 import com.basho.riak.client.core.query.timeseries.Cell;
+import com.basho.riak.client.core.query.timeseries.CollectionConverters;
 import com.basho.riak.client.core.query.timeseries.ColumnDescription;
 import com.basho.riak.client.core.query.timeseries.Row;
-
-import com.basho.riak.client.core.RiakMessage;
-//import com.basho.riak.client.core.query.timeseries.immutable.TimeSeriesPBLightConverter;
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.infra.Blackhole;
-import shaded.com.bash.riak.protobuf.RiakMessageCodes;
-import shaded.com.bash.riak.protobuf.RiakTsPB;
+import shaded.com.basho.riak.protobuf.RiakTsPB;
 import shaded.com.google.protobuf.ByteString;
 import shaded.com.google.protobuf.InvalidProtocolBufferException;
 
@@ -33,20 +30,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  *
  * @author Sergey Galkin <srggal at gmail dot com>
  */
-@State(Scope.Thread)
-@BenchmarkMode(Mode.SingleShotTime)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 1, jvmArgsAppend = {"-server", "-disablesystemassertions"})
-@Warmup(time = 100, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(time = 100, timeUnit = TimeUnit.MILLISECONDS)
+//@State(Scope.Thread)
+//@BenchmarkMode(Mode.SingleShotTime)
+//@OutputTimeUnit(TimeUnit.MILLISECONDS)
+//@Fork(value = 1, jvmArgsAppend = {"-server", "-disablesystemassertions"})
+//@Warmup(time = 100, timeUnit = TimeUnit.MILLISECONDS)
+//@Measurement(time = 100, timeUnit = TimeUnit.MILLISECONDS)
 public class TsPBBenchmarks {
-    @Param({ "1", "10", "100", "1000", "10000"})
+    //@Param({ "1", "10", "100", "1000", "10000"})
     int rowCount;
 
     private final static ByteString TABLE_NAME = ByteString.copyFromUtf8("TsTest");
@@ -86,29 +82,30 @@ public class TsPBBenchmarks {
 
         final RiakTsPB.TsQueryResp.Builder builder = RiakTsPB.TsQueryResp.newBuilder();
         builder.addAllColumns(
-                TimeSeriesPBConverter.convertColumnDescriptionsToPb(columns)
+                CollectionConverters.convertColumnDescriptionsToPb(columns)
         );
 
-        pbRows = TimeSeriesPBConverter.convertRowsToPb(rows);
+        // Nb: Broken, we removed this method when we moved to TTB.
+        //pbRows = CollectionConverters.convertRowsToPb(rows);
         builder.addAllRows(pbRows);
 
         pbQueryResp = builder.build();
         encodedQueryResponse = pbQueryResp.toByteArray();
     }
 
-    @Benchmark
-    public void parseTsQueryResp(Blackhole bh) throws InvalidProtocolBufferException {
-        bh.consume(
-                RiakTsPB.TsQueryResp.parseFrom(encodedQueryResponse)
-        );
-    }
+//    @Benchmark
+//    public void parseTsQueryResp(Blackhole bh) throws InvalidProtocolBufferException {
+//        bh.consume(
+//                RiakTsPB.TsQueryResp.parseFrom(encodedQueryResponse)
+//        );
+//    }
 
-    @Benchmark
-    public void decodeTsQueryResp(Blackhole bh){
-        bh.consume(
-                TimeSeriesPBConverter.convertPbGetResp(pbQueryResp)
-        );
-    }
+//    @Benchmark
+//    public void decodeTsQueryResp(Blackhole bh){
+//        bh.consume(
+//                TimeSeriesPBConverter.convertPbGetResp(pbQueryResp)
+//        );
+//    }
 
 //    @Benchmark
 //    public void decodeTsQueryRespLight(Blackhole bh){
@@ -117,13 +114,13 @@ public class TsPBBenchmarks {
 //        );
 //    }
 
-    @Benchmark
-    public void decodeFullCycleTsQueryResp(Blackhole bh) throws InvalidProtocolBufferException {
-        final RiakTsPB.TsQueryResp resp = RiakTsPB.TsQueryResp.parseFrom(encodedQueryResponse);
-        bh.consume(
-                TimeSeriesPBConverter.convertPbGetResp(resp)
-        );
-    }
+//    @Benchmark
+//    public void decodeFullCycleTsQueryResp(Blackhole bh) throws InvalidProtocolBufferException {
+//        final RiakTsPB.TsQueryResp resp = RiakTsPB.TsQueryResp.parseFrom(encodedQueryResponse);
+//        bh.consume(
+//                TimeSeriesPBConverter.convertPbGetResp(resp)
+//        );
+//    }
 
 //    @Benchmark
 //    public void decodeFullCycleTsQueryRespLight(Blackhole bh) throws InvalidProtocolBufferException {
@@ -133,19 +130,19 @@ public class TsPBBenchmarks {
 //        );
 //    }
 
-    @Benchmark
-    public void encodePbRows(Blackhole bh) {
-        bh.consume( TimeSeriesPBConverter.convertRowsToPb(rows));
-    }
+//    @Benchmark
+//    public void encodePbRows(Blackhole bh) {
+//        bh.consume( TimeSeriesPBConverter.convertRowsToPb(rows));
+//    }
 
-    @Benchmark
-    public void encodeFullCycleTsPutReq(Blackhole bh) {
-        final RiakTsPB.TsPutReq.Builder builder = RiakTsPB.TsPutReq.newBuilder();
-        builder.setTable(TABLE_NAME);
-        builder.addAllRows(TimeSeriesPBConverter.convertRowsToPb(rows));
-
-        bh.consume(
-                new RiakMessage(RiakMessageCodes.MSG_TsPutReq, builder.build().toByteArray())
-            );
-    }
+//    @Benchmark
+//    public void encodeFullCycleTsPutReq(Blackhole bh) {
+//        final RiakTsPB.TsPutReq.Builder builder = RiakTsPB.TsPutReq.newBuilder();
+//        builder.setTable(TABLE_NAME);
+//        builder.addAllRows(TimeSeriesPBConverter.convertRowsToPb(rows));
+//
+//        bh.consume(
+//                new RiakMessage(RiakMessageCodes.MSG_TsPutReq, builder.build().toByteArray())
+//            );
+//    }
 }
